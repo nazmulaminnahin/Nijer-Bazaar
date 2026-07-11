@@ -11,16 +11,16 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link to="/" className="text-foreground/80 transition-colors hover:text-primary">হোম</Link>
-          <a href="/#products" className="text-foreground/80 transition-colors hover:text-primary">পণ্য</a>
+          <Link to="/store" className="text-foreground/80 transition-colors hover:text-primary">স্টোর</Link>
           <a href="/#trust" className="text-foreground/80 transition-colors hover:text-primary">কেন আমরা</a>
         </nav>
         <div className="flex items-center gap-2">
-          <a
-            href="/#products"
+          <Link
+            to="/store"
             className="inline-flex items-center gap-1.5 rounded-full bg-gradient-brand px-4 py-2 text-xs font-bold text-primary-foreground shadow-brand transition-transform hover:scale-105"
           >
             <ShoppingBag className="h-3.5 w-3.5" /> এখনই কিনুন
-          </a>
+          </Link>
         </div>
       </div>
     </header>

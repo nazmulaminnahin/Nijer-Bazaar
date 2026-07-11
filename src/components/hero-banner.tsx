@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ShieldCheck, ThumbsUp, Truck, Headphones } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.png";
 
@@ -19,9 +20,9 @@ export function HeroBanner() {
             সমস্যার সমাধান, স্বস্তির নিশ্চয়তা — উন্নত মানের পণ্য, দ্রুত ডেলিভারি এবং বিশ্বস্ত সার্ভিস, একদম আপনার দরজায়।
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#products" className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-bold text-secondary-foreground shadow-brand transition-transform hover:scale-105">
-              এখনই অর্ডার করুন
-            </a>
+            <Link to="/store" className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-bold text-secondary-foreground shadow-brand transition-transform hover:scale-105">
+              এখনই কিনুন
+            </Link>
             <a href="#trust" className="inline-flex items-center justify-center rounded-full border-2 border-white/70 px-6 py-3 text-sm font-bold backdrop-blur-sm transition-colors hover:bg-white/10">
               আরও জানুন
             </a>

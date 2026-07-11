@@ -1,7 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useMemo, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AnnouncementBar } from "@/components/announcement-bar";
@@ -10,6 +8,7 @@ import { CheckoutForm } from "@/components/checkout-form";
 import { StickyOrderButton } from "@/components/sticky-order-button";
 import { CheckCircle2, Star, ShieldCheck, Truck, Award } from "lucide-react";
 import { trackEvent } from "@/lib/pixel";
+import { getProductBySlug, type Product } from "@/lib/local-store";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => ({
@@ -23,22 +22,8 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { data: product, isLoading } = useQuery({
-    queryKey: ["product", slug],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("slug", slug).eq("is_active", true).maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-  const { data: reviews = [] } = useQuery({
-    queryKey: ["reviews", product?.id],
-    enabled: !!product?.id,
-    queryFn: async () => {
-      const { data } = await supabase.from("reviews").select("*").eq("product_id", product!.id).eq("is_approved", true).order("created_at", { ascending: false });
-      return data ?? [];
-    },
-  });
+  const [product] = useState<Product | null>(() => getProductBySlug(slug));
+  const reviews = useMemo(() => [], []);
 
   const [activeImg, setActiveImg] = useState(0);
 
@@ -46,7 +31,6 @@ function ProductPage() {
     if (product) trackEvent("ViewContent", { content_ids: [product.id], content_name: product.name, value: Number(product.price), currency: "BDT" });
   }, [product]);
 
-  if (isLoading) return <div className="grid min-h-screen place-items-center">লোড হচ্ছে...</div>;
   if (!product) throw notFound();
 
   const images = ((product.images as string[] | null) ?? []);
@@ -152,9 +136,9 @@ function ProductPage() {
               ))}
             </div>
 
-            <a href="#checkout" className="mt-6 hidden w-full items-center justify-center rounded-xl bg-gradient-brand px-6 py-4 text-base font-extrabold text-primary-foreground shadow-brand transition-transform hover:scale-[1.01] md:flex">
+            <Link to="/order/$slug" params={{ slug }} className="mt-6 hidden w-full items-center justify-center rounded-xl bg-gradient-brand px-6 py-4 text-base font-extrabold text-primary-foreground shadow-brand transition-transform hover:scale-[1.01] md:flex">
               {product.is_pre_order ? "Pre-Order Now" : "Order Now"} — ৳{Number(product.price).toLocaleString()}
-            </a>
+            </Link>
           </div>
         </div>
 

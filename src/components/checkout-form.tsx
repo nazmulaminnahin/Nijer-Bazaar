@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { trackEvent } from "@/lib/pixel";
+import { createOrder } from "@/lib/local-store";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Product = Tables<"products">;
@@ -33,50 +32,48 @@ export function CheckoutForm({ product }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const submit = useMutation({
-    mutationFn: async () => {
-      const trimmed = {
-        customer_name: name.trim(),
-        phone: phone.trim(),
-        address: address.trim(),
-      };
-      if (trimmed.customer_name.length < 2) throw new Error("সঠিক নাম লিখুন");
-      if (!/^[0-9+\-\s]{6,}$/.test(trimmed.phone)) throw new Error("সঠিক ফোন নম্বর লিখুন");
-      if (trimmed.address.length < 5) throw new Error("সম্পূর্ণ ঠিকানা লিখুন");
+  const [submitting, setSubmitting] = useState(false);
 
-      const { data, error } = await supabase
-        .from("orders")
-        .insert({
-          ...trimmed,
-          delivery_zone: zone,
-          shipping_fee: fee,
-          product_id: product.id,
-          product_name: product.name,
-          product_price: Number(product.price),
-          quantity: qty,
-          subtotal,
-          total,
-          payment_method: "cod",
-          status: product.is_pre_order ? "pre_order" : "pending",
-          is_pre_order: product.is_pre_order,
-        })
-        .select("order_number")
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (d) => {
+  const submit = async () => {
+    const trimmed = {
+      customer_name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+    };
+    if (trimmed.customer_name.length < 2) { toast.error("সঠিক নাম লিখুন"); return; }
+    if (!/^[0-9+\-\s]{6,}$/.test(trimmed.phone)) { toast.error("সঠিক ফোন নম্বর লিখুন"); return; }
+    if (trimmed.address.length < 5) { toast.error("সম্পূর্ণ ঠিকানা লিখুন"); return; }
+
+    setSubmitting(true);
+    try {
+      const data = createOrder({
+        ...trimmed,
+        delivery_zone: zone,
+        shipping_fee: fee,
+        product_id: product.id,
+        product_name: product.name,
+        product_price: Number(product.price),
+        quantity: qty,
+        subtotal,
+        total,
+        payment_method: "cod",
+        status: product.is_pre_order ? "pre_order" : "pending",
+        is_pre_order: product.is_pre_order,
+      });
       trackEvent("Purchase", { value: total, currency: "BDT", content_ids: [product.id] });
-      toast.success(`অর্ডার সফল! Order #${d.order_number}`, { duration: 8000 });
+      toast.success(`অর্ডার সফল! Order #${data.order_number}`, { duration: 8000 });
       setName(""); setPhone(""); setAddress(""); setQty(1);
-    },
-    onError: (e: Error) => toast.error(e.message ?? "অর্ডার করতে সমস্যা হয়েছে"),
-  });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "অর্ডার করতে সমস্যা হয়েছে");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <form
       id="checkout"
-      onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}
+      onSubmit={(e) => { e.preventDefault(); submit(); }}
       className="rounded-2xl border-2 border-primary/20 bg-card p-5 shadow-card sm:p-7"
     >
       <div className="mb-5">
@@ -124,9 +121,9 @@ export function CheckoutForm({ product }: Props) {
         </div>
       </div>
 
-      <button type="submit" disabled={submit.isPending}
+      <button type="submit" disabled={submitting}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand px-6 py-4 text-base font-extrabold text-primary-foreground shadow-brand transition-transform hover:scale-[1.01] disabled:opacity-60">
-        {submit.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+        {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
         {product.is_pre_order ? "প্রি-অর্ডার নিশ্চিত করুন" : "অর্ডার নিশ্চিত করুন"} — ৳{total.toLocaleString()}
       </button>
       <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">

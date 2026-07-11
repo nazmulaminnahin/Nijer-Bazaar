@@ -1,7 +1,6 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { login, signup, getSession } from "@/lib/api";
-import { isLoggedIn } from "@/lib/auth";
+import { registerUser, loginUser, getSession } from "@/lib/local-store";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import logo from "@/assets/logo.png";
@@ -11,37 +10,50 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!isLoggedIn()) return;
-    getSession()
-      .then(() => navigate({ to: "/admin" }))
-      .catch(() => {});
-  }, [navigate]);
+    setReady(true);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signin") {
-        await login(email, password);
-        toast.success("স্বাগতম!");
-        navigate({ to: "/admin" });
+        const result = loginUser(email, password);
+        if (result.success) {
+          toast.success("স্বাগতম!");
+          setTimeout(() => {
+            window.location.href = "/store";
+          }, 500);
+        } else {
+          toast.error(result.message);
+        }
       } else {
-        await signup(email, password);
-        toast.success("অ্যাকাউন্ট তৈরি হয়েছে — লগইন করুন");
-        setMode("signin");
+        const result = registerUser(email, password);
+        if (result.success) {
+          toast.success(result.message);
+          setEmail("");
+          setPassword("");
+          setMode("signin");
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message || "কোনো সমস্যা হয়েছে");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!ready) {
+    return <div className="grid min-h-screen place-items-center bg-background"><p className="text-lg font-semibold">লোড হচ্ছে...</p></div>;
   }
 
   return (
@@ -66,16 +78,18 @@ function AuthPage() {
           <button type="submit" disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand px-5 py-3 text-base font-bold text-primary-foreground shadow-brand disabled:opacity-60">
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "signin" ? "লগইন" : "সাইন আপ"}
+            {mode === "signin" ? "লগইন করুন" : "অ্যাকাউন্ট তৈরি করুন"}
           </button>
         </form>
         <button onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
           className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-primary">
           {mode === "signin" ? "অ্যাকাউন্ট নেই? সাইন আপ করুন" : "অ্যাকাউন্ট আছে? লগইন করুন"}
         </button>
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5 text-success" /> Secure admin access
-        </p>
+        <div className="mt-6 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+          <p className="mb-1 flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> <strong>ডেমো অ্যাকাউন্ট:</strong></p>
+          <p>ইমেইল: demo@test.com</p>
+          <p>পাসওয়ার্ড: demo123</p>
+        </div>
       </div>
     </div>
   );

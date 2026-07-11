@@ -1,7 +1,11 @@
 import logo from "@/assets/logo.png";
 import { Facebook, Phone, Mail, MapPin } from "lucide-react";
+import { getSiteSettings } from "@/lib/local-store";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export function SiteFooter() {
+  const settings = getSiteSettings();
+
   return (
     <footer className="mt-20 bg-gradient-dark text-secondary-foreground">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
@@ -14,26 +18,33 @@ export function SiteFooter() {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-wider text-primary-glow">Quick Links</h4>
           <ul className="mt-4 space-y-2 text-sm text-secondary-foreground/80">
-            <li><a href="/" className="hover:text-primary">হোম</a></li>
-            <li><a href="/#products" className="hover:text-primary">সকল পণ্য</a></li>
-            <li><a href="/#trust" className="hover:text-primary">কেন আমরা</a></li>
+            {settings.quickLinks.map((link) => (
+              <li key={link.href}><a href={link.href} className="hover:text-primary">{link.label}</a></li>
+            ))}
           </ul>
         </div>
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-wider text-primary-glow">Policies</h4>
-          <ul className="mt-4 space-y-2 text-sm text-secondary-foreground/80">
-            <li>রিফান্ড পলিসি</li>
-            <li>রিটার্ন পলিসি</li>
-            <li>প্রাইভেসি পলিসি</li>
-          </ul>
+          <Accordion type="single" collapsible className="mt-4 space-y-2 text-sm text-secondary-foreground/80">
+            {settings.policies.map((policy) => (
+              <AccordionItem key={policy.title} value={policy.title} className="border-b-0 rounded-lg bg-white/10 px-3">
+                <AccordionTrigger className="py-2 text-left text-sm font-semibold text-secondary-foreground hover:no-underline">
+                  {policy.title}
+                </AccordionTrigger>
+                <AccordionContent className="pt-0 pb-2 text-sm text-secondary-foreground/80">
+                  {policy.content}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-wider text-primary-glow">Contact</h4>
           <ul className="mt-4 space-y-3 text-sm text-secondary-foreground/80">
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> 09XXX-XXXXXX</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> support@nijerbazaarbd.com</li>
-            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Dhaka, Bangladesh</li>
-            <li className="flex items-center gap-2"><Facebook className="h-4 w-4 text-primary" /> /nijerbazaar</li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {settings.contact.phone}</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> {settings.contact.email}</li>
+            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {settings.contact.address}</li>
+            <li className="flex items-center gap-2"><Facebook className="h-4 w-4 text-primary" /> {settings.contact.facebook}</li>
           </ul>
         </div>
       </div>

@@ -1,6 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { getProducts } from "@/lib/api";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AnnouncementBar } from "@/components/announcement-bar";
@@ -9,16 +7,14 @@ import { TrustBadges } from "@/components/trust-badges";
 import { ProductCard } from "@/components/product-card";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { Flame, Sparkles, Package } from "lucide-react";
+import { getVisibleProducts, type Product } from "@/lib/local-store";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
 function HomePage() {
-  const { data: products = [] } = useQuery({
-    queryKey: ["products", "active"],
-    queryFn: getProducts,
-  });
+  const products = getVisibleProducts();
 
   const flash = products.filter((p) => p.is_flash_sale);
   const featured = products.filter((p) => p.is_featured && !p.is_flash_sale);
